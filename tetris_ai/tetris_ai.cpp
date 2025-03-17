@@ -258,61 +258,6 @@ int Evaluate(int &clearScore, const AI_Param &ai_param,
   }
   score += pool_hole_score;
 #ifdef XP_RELEASE
-  // 全消
-  if (0) {
-    if (beg_y > pool_h) {
-      clearScore -= (2000 * pool.combo - curdepth * 50) * 1.0;
-    } else if (pool_total_cell % 2 == 0 && beg_y > pool_h - 10 &&
-               total_hole < 2) {
-      int h_hole[32] = {0};
-      const GameField &_pool = pool;
-      int top_y = beg_y, hole_add = 0, height;
-      if (pool_total_cell % 4)
-        top_y -= 1;
-      height = pool_h + 1 - top_y;
-      if (height < 3)
-        height += 2;
-      for (int x = 0; x < pool_w; ++x) {
-        h_hole[x] = min_y[x] - top_y + y_holes[x];
-      }
-
-      int last_cnt = 0, pc = 1, finish = 0, h4 = 0, cnt1 = 0, total_cnt = 0;
-      for (int x = 0; x < pool_w; ++x) {
-        total_cnt += h_hole[x];
-      }
-      for (int x = 0; x < pool_w; ++x) {
-        if (h_hole[x] == 0) {
-          if (last_cnt % 4 != 0) {
-            top_y -= 2;
-            height += 2;
-            x = -1;
-            last_cnt = 0, finish = 0, h4 = 0, cnt1 = 0, total_cnt += pool_w * 2;
-            {
-              for (int x = 0; x < pool_w; ++x) {
-                h_hole[x] += 2;
-              }
-            }
-          } else if (last_cnt <= 0 || last_cnt >= total_cnt - 0)
-            finish++;
-          else
-            ++h4;
-        } else {
-          if (min_y[x] == top_y + 1) {
-            ++cnt1;
-          }
-          last_cnt += h_hole[x];
-        }
-      }
-      if (pc && ((total_cnt) / 4 * 0.8 + total_clear_att <
-                 pool.getPCAttack())) { //&& last_cnt < 30 ) {
-        int s = (30 + finish * 2 + h4 * 1 -
-                 (height /*+ total_clears * 2*/) * 3 /*- cnt1 * 2 */) *
-                1.0;
-        if (s > 0)
-          score -= s;
-      }
-    }
-  }
 #endif
   // 高度差
   {
@@ -344,20 +289,13 @@ int Evaluate(int &clearScore, const AI_Param &ai_param,
       for (int x = 0; x < pool_w; ++x) {
         avg += min_y[x];
       }
-      if (0) {
-        double h = pool_h - (double)avg / pool_w;
-        score += int(ai_param.miny_factor * h * h / pool_h);
-      } else {
-        int h = std::min(std::min(min_y[gem_beg_x], min_y[gem_beg_x + 1]),
-                         std::min(min_y[gem_beg_x + 2], min_y[gem_beg_x + 3]));
-        if (h < 8) {
-          score += int(ai_param.miny_factor * (8 - h) * 2);
-        }
+      int h = std::min(std::min(min_y[gem_beg_x], min_y[gem_beg_x + 1]),
+                       std::min(min_y[gem_beg_x + 2], min_y[gem_beg_x + 3]));
+      if (h < 8) {
+        score += int(ai_param.miny_factor * (8 - h) * 2);
       }
-      if (1) {
-        if (avg < pool_w * center) {
-          warning_factor = 0.0 + (double)avg / pool_w / center / 1;
-        }
+      if (avg < pool_w * center) {
+        warning_factor = 0.0 + (double)avg / pool_w / center / 1;
       }
       // 偏差值
       {
@@ -1130,20 +1068,6 @@ MovingSimple AISearch(AI_Param ai_param, const GameField &pool, int hold,
         continue;
       }
       max_combo = std::max(max_combo, (int)ms_last.pool_last.combo);
-      if (0)
-        if (pq_size != pqmax_size) { // 超高combo后的无combo剪枝
-          if (ms_last.pool_last.combo > 0 && max_combo > 5 &&
-              ms_last.pool_last.combo < max_combo - 1) {
-            break;
-          }
-        }
-      if (0)
-        if (depth > 0 && maxDeep > 2 &&
-            ms_last.first.score > max_search_score) {
-          if (pq_size + 2 < pqmax_size) {
-            break;
-          }
-        }
       if (ai_settings[player].hash) {
         GameState gs(ms_last.pool_last.hashval, ms_last.pool_last.m_hold,
                      ms_last.att, ms_last.clear, ms_last.combo,
