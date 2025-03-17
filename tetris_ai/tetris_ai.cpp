@@ -48,12 +48,12 @@ int Evaluate(int &clearScore, const AI_Param &ai_param,
              int clears, signed char wallkick_spin, int lastCombo, int t_dis,
              int upcomeAtt) {
   int score = 0;
-  // 测高度
+  // maximum extent of coverage (e.g. of a particular area)
 
   int min_y[32] = {0};
   int emptys[32] = {0};
   int maxy_index = 31, maxy_cnt = 0;
-  int maxy_flat_cnt = 0; // 最长平台
+  int maxy_flat_cnt = 0; // Longest platform
   int miny_val = 31;
   int total_hole = 0;
   int beg_y = -5;
@@ -66,7 +66,7 @@ int Evaluate(int &clearScore, const AI_Param &ai_param,
       ++beg_y;
     for (int x = 0; x < pool_w; ++x) {
       for (int y = beg_y, ey = pool_h + 1; y <= ey;
-           ++y) { // 要有底行保护（pool.h），否则会挂
+           ++y) { // Have bottom line protection (pool.h) or it will hang!
         if (pool.row[y] & (1 << x)) {
           min_y[x] = y;
           miny_val = std::min(miny_val, y);
@@ -127,16 +127,17 @@ int Evaluate(int &clearScore, const AI_Param &ai_param,
       }
     }
   }
-  // 洞的数量
-  int x_holes[32] = {0};    // 水平方向洞的数量
-  int y_holes[32] = {0};    // 垂直方向洞的数量
-  int x_op_holes[32] = {0}; // 水平方向洞的数量
+  // Number of holes
+  int x_holes[32] = {0};    // Number of holes in horizontal direction
+  int y_holes[32] = {0};    // Number of vertical holes
+  int x_op_holes[32] = {0}; // Number of holes in horizontal direction
 
   int pool_hole_score;
   int pool_total_cell = 0;
-  {                             // pool
-    int first_hole_y[32] = {0}; // 垂直方向最近的洞的y
-    int x_renholes[32] = {0};   // 垂直连续洞的数量
+  { // pool
+    int first_hole_y[32] = {
+        0}; // The y of the nearest hole in the vertical direction
+    int x_renholes[32] = {0}; // Number of vertical continuous holes
     double hole_score = 0;
     const GameField &_pool = pool;
     for (int x = 0; x < pool_w; ++x) {
@@ -259,7 +260,7 @@ int Evaluate(int &clearScore, const AI_Param &ai_param,
   score += pool_hole_score;
 #ifdef XP_RELEASE
 #endif
-  // 高度差
+  // altitude difference
   {
 
     int last = min_y[1];
@@ -276,11 +277,11 @@ int Evaluate(int &clearScore, const AI_Param &ai_param,
         score += absv * ai_param.h_factor;
     }
   }
-  // 平地
-  int center = 10; // 摆楼警戒线
+  // peacefully
+  int center = 10; // Pendulum building cordon
   double warning_factor = 1;
   int h_variance_score = 0;
-  // 算方差
+  // arithmetic variance (math.)
   {
     int avg = 0;
     {
@@ -297,7 +298,7 @@ int Evaluate(int &clearScore, const AI_Param &ai_param,
       if (avg < pool_w * center) {
         warning_factor = 0.0 + (double)avg / pool_w / center / 1;
       }
-      // 偏差值
+      // deviation
       {
         int dif_sum = 0;
         for (int x = 0; x < pool_w; ++x) {
@@ -306,7 +307,7 @@ int Evaluate(int &clearScore, const AI_Param &ai_param,
         score += ai_param.dif_factor * dif_sum / pool_w / pool_w;
       }
     }
-    // 攻击计算
+    // attack calculation
     {
       int s = 0;
       int t_att = total_clear_att;
@@ -321,7 +322,8 @@ int Evaluate(int &clearScore, const AI_Param &ai_param,
       }
       int cs = 0;
       if (cur_num == GEMTYPE_T && wallkick_spin && clears > 0 &&
-          ai_param.tspin > 0) { // T消附加分，要比T1/T2形状基本分大一
+          ai_param.tspin > 0) { // The T-additional score is one point larger
+                                // than the basic T1/T2 shape score.
         s -= ai_param.hold_T;
         if (clears >= 3) {
           if (clear_att >= clears * 2) { // T3
@@ -356,17 +358,17 @@ int Evaluate(int &clearScore, const AI_Param &ai_param,
     }
   }
 
-  // 特殊形状判定
+  // Special Shape Determination
 
-  // 计算可攻击（Tetris和T2）
+  // Computational attackability (Tetris and T2)
   if (maxy_cnt == 0) {
     int ybeg = 0;
     if (softdropEnable() && maxy_index > 0 && maxy_index < pool_w - 1 &&
-        ai_param.tspin > 0) { // T1/T2基本形状分
+        ai_param.tspin > 0) { // T1/T2 Basic Shape Division
       ybeg = std::max(min_y[maxy_index - 1], min_y[maxy_index + 1]);
       if (min_y[maxy_index - 1] == min_y[maxy_index + 1] &&
           x_holes[ybeg] == 0 && x_holes[ybeg - 1] == 0 &&
-          x_op_holes[ybeg] == 0 && x_op_holes[ybeg - 1] == 0) { // T准备
+          x_op_holes[ybeg] == 0 && x_op_holes[ybeg - 1] == 0) { // Preparation T
         int cnt = 0;
         if (maxy_index > 1 &&
             min_y[maxy_index - 2] >= min_y[maxy_index - 1] - 2)
